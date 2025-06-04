@@ -1,0 +1,50 @@
+trigger:
+- main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  artifactName: 'drop'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.x'
+
+    - script: |
+        python app.py
+      displayName: 'Run App'
+
+    - task: CopyFiles@2
+      inputs:
+        contents: '**/*'
+        targetFolder: '$(Build.ArtifactStagingDirectory)'
+
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: '$(artifactName)'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - deployment: DeployToEC2
+    environment: 'ec2-env'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: $(artifactName)
+
+          - script: |
+              echo "Deploying to EC2..."
+              scp -i ~/.ssh/your-key.pem app.py ec2-user@your-ec2-ip:/home/ec2-user/
+              ssh -i ~/.ssh/your-key.pem ec2-user@your-ec2-ip "python3 /home/ec2-user/app.py"
+            displayName: 'Deploy to EC2'
