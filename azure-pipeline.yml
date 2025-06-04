@@ -18,7 +18,7 @@ stages:
 
     - script: |
         sudo yum install -y python3
-        python app.py
+        python3 app.py
       displayName: 'Run App'
 
     - task: CopyFiles@2
