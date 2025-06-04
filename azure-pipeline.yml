@@ -17,6 +17,7 @@ stages:
     #     versionSpec: '3.x'
 
     - script: |
+        sudo yum install -y python3
         python app.py
       displayName: 'Run App'
 
